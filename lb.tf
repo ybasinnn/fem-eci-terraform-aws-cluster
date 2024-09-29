@@ -106,21 +106,37 @@ resource "aws_lb_listener" "http" {
 # }
 
 resource "aws_lb_target_group" "service" {
+  deregistration_delay              = 60
+  load_balancing_cross_zone_enabled = true
+  port                              = 80
+
   for_each = local.gateways
 
   deregistration_delay              = 60
   load_balancing_cross_zone_enabled = true
   port                              = each.value.port
+
   protocol                          = "HTTP"
   vpc_id                            = data.aws_vpc.this.id
 
   tags = {
     Cluster   = "${var.name}-${var.environment}"
+
+    Name      = "fem-eci-service-${var.environment}"
+
     Name      = "${var.name}-${var.environment}-${each.key}"
+
     Network   = var.vpc_name
     Terraform = "terraform-aws-cluster"
   }
 }
+
+
+resource "aws_lb_listener_rule" "service" {
+  listener_arn = aws_lb_listener.http.arn
+
+  action {
+    target_group_arn = aws_lb_target_group.service.arn
 
 resource "aws_lb_listener_rule" "quirk" {
   for_each = local.gateways
@@ -129,11 +145,18 @@ resource "aws_lb_listener_rule" "quirk" {
 
   action {
     target_group_arn = aws_lb_target_group.service[each.key].arn
+
     type             = "forward"
   }
 
   condition {
     host_header {
+
+      values = ["${var.name}.${var.domain}"]
+    }
+  }
+}
+
       values = ["fem-eci-${each.key}-${var.environment}.${var.domain}"]
     }
   }
@@ -148,3 +171,4 @@ moved {
   from = aws_lb_listener_rule.service
   to   = aws_lb_listener_rule.service["service"]
 }
+
