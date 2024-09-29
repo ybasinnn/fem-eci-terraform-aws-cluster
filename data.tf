@@ -74,7 +74,3 @@ data "aws_security_group" "this_private" {
   }
 }
 
-data "tfe_outputs" "tfe" {
-  organization = "DanchoOrg"
-  workspace    = "fem-eci-tfe"
-}
