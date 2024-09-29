@@ -73,4 +73,3 @@ data "aws_security_group" "this_private" {
     values = [data.aws_vpc.this.id]
   }
 }
-
